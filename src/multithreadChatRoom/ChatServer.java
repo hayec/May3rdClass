@@ -30,7 +30,6 @@ public class ChatServer
 		{
 			listener.close();
 		}
-		
 	}
 	private static class Handler extends Thread
 	{
@@ -38,7 +37,7 @@ public class ChatServer
 		private Socket socket;
 		private BufferedReader in;
 		private PrintWriter out;
-		private Handler(Socket socket)
+		public Handler(Socket socket)
 		{
 			this.socket = socket;
 		}
@@ -50,8 +49,9 @@ public class ChatServer
 				out = new PrintWriter(socket.getOutputStream());
 				while(true)
 				{
-					out.println("SUBMITNAME");
-					if(name == null)
+					out.println("SUBMITNAME");//request a screen name
+					name = in.readLine();//capture the screen from client
+					if(name == null)//test name validity
 					{
 						return;
 					}
@@ -59,13 +59,40 @@ public class ChatServer
 					{
 						if(!name.contains(name))
 						{
+							//Name is valid
 							names.add(name);
 							break;
 						}
 					}
 				}
+				out.println("NAMEACCEPTED");
+				writers.add(out);
+				while(true)
+				{
+					String line = in.readLine();
+					if(input == null) 
+						return;
+					for(PrintWriter writer : writers)
+					{
+						writer.println("MESSAGE " + name + ": " + line);
+					}
+				}
 			}
-			finally {}
+			catch(IOException e)
+			{
+				e.printStackTrace();
+			}
+			finally
+			{
+				if(name != null)
+				{
+					names.remove(name);
+				}
+				if(out != null)
+				{
+					writers.remove(out);
+				}
+			}
 		}
 	}
 }
